@@ -1,0 +1,5 @@
+- hosts: 10.24.28.10
+  become: true
+  tasks:
+    - name: Resize container rootfs
+      command: /usr/sbin/pct resize 101 rootfs 8G

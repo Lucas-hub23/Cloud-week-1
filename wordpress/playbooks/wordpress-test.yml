@@ -1,0 +1,25 @@
+---
+- name: Deploy WordPress LXC container on Proxmox
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Create WordPress LXC container
+      community.proxmox.proxmox:
+        api_host: "10.24.28.10"
+        api_user: "root@pam"
+        api_token_id: "ansible"
+        api_token_secret: "613b7ca5-7d20-43d6-9f1c-36b67020dfba"
+        node: "pve1"
+        vmid: 101
+        hostname: "wordpress-lxc"
+        ostemplate: "local:vztmpl/wordpress-template-ubuntu24.tar.gz"
+        storage: "local-lvm"
+        cores: 2
+        memory: 2048
+        netif:
+          net0: "name=eth0,bridge=vmbr0,ip=dhcp,firewall=1"
+        password: "changeme123"
+        state: present
+        force: true

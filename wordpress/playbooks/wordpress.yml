@@ -1,0 +1,75 @@
+---
+- name: Deploy WordPress LXC containers on Proxmox
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    nodes:
+      - { ip: "10.24.28.10", name: "pve1" }
+      - { ip: "10.24.28.20", name: "pve2" }
+      - { ip: "10.24.28.30", name: "pve3" }
+    container_count: 10
+    memory: 2048
+    cores: 2
+    ostemplate: "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+    storage: "rbd"
+    wordpress_dependencies:
+      - apache2
+      - php
+      - php-mysql
+      - mysql-client
+      - libapache2-mod-php
+
+  tasks:
+    - name: Build VM list for deployment
+      set_fact:
+        vms: "{{ vms | default([]) + [{'node': nodes[item % nodes|length], 'vmid': 101 + item}] }}"
+      loop: "{{ range(container_count)|list }}"
+
+    - name: Create WordPress containers
+      community.proxmox.proxmox:
+        api_host: "{{ item.node.ip }}"
+        api_user: "root@pam"
+        api_token_id: "ansible"
+        api_token_secret: "613b7ca5-7d20-43d6-9f1c-36b67020dfba"
+        node: "{{ item.node.name }}"
+        vmid: "{{ item.vmid }}"
+        hostname: "wordpress-{{ item.vmid }}"
+        ostemplate: "{{ ostemplate }}"
+        storage: "{{ storage }}"
+        cores: "{{ cores }}"
+        memory: "{{ memory }}"
+        netif:
+          net0: "name=eth0,bridge=vmbr0,ip=dhcp,firewall=1"
+        password: "changeme123"
+        state: present
+        force: true
+      loop: "{{ vms }}"
+
+- name: Resize rootfs on Proxmox nodes
+  hosts:
+    - 10.24.28.10
+    - 10.24.28.20
+    - 10.24.28.30
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Resize container rootfs
+      command: /usr/sbin/pct resize {{ item }} rootfs +8G
+      environment:
+        PATH: "/usr/sbin:/usr/bin:/bin"
+      loop: "{{ range(101, 101 + 10)|list }}"
+
+- name: Install WordPress dependencies
+  hosts:
+    - 10.24.28.10
+    - 10.24.28.20
+    - 10.24.28.30
+  become: true
+  gather_facts: yes
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: "{{ wordpress_dependencies }}"
+        state: present
+        update_cache: yes
