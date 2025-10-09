@@ -1,0 +1,37 @@
+- name: Remove multiple LXC containers across nodes
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    api_host: "10.24.28.10"
+    api_user: "root@pam"
+    api_token_id: "ansible"
+    api_token_secret: "613b7ca5-7d20-43d6-9f1c-36b67020dfba"
+    nodes: [pve1, pve2, pve3]
+    vmids: "{{ range(101, 111) | list }}"  # 101 t/m 110
+
+  tasks:
+
+    - name: Stop container if running
+      community.proxmox.proxmox:
+        api_host: "{{ api_host }}"
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ nodes[(item - 101) % nodes|length] }}"
+        vmid: "{{ item }}"
+        state: stopped
+      loop: "{{ vmids }}"
+
+
+    - name: Remove LXC containers distributed across nodes
+      community.proxmox.proxmox:
+        api_host: "{{ api_host }}"
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ nodes[(item - 101) % nodes|length] }}"
+        vmid: "{{ item }}"
+        state: absent
+      loop: "{{ vmids }}"

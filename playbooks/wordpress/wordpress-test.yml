@@ -12,10 +12,12 @@
         api_token_id: "ansible"
         api_token_secret: "613b7ca5-7d20-43d6-9f1c-36b67020dfba"
         node: "pve1"
-        vmid: 101
+        vmid: 155
         hostname: "wordpress-lxc"
-        ostemplate: "local:vztmpl/wordpress-template-ubuntu24.tar.gz"
-        storage: "local-lvm"
+        ostemplate: "cephfs:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+        disk_volume:
+          storage: "rbd"
+          size: 30
         cores: 2
         memory: 2048
         netif:

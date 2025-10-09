@@ -1,0 +1,9 @@
+- name: Create template
+  community.proxmox.proxmox:
+    vmid: 100
+    api_user: "root@pam"
+    api_token_id: "ansible"
+    api_token_secret: "613b7ca5-7d20-43d6-9f1c-36b67020dfba"
+    api_host: "10.24.28.10"
+    node: "pve1"
+    state: "template"
